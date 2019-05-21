@@ -1,0 +1,23 @@
+#	####################################################
+#	СИНТАКСИЧЕСКАЯ РАСКРАСКА ДЛЯ БИБИЛИОТЕКИ:
+#	iarduino_Bluetooth_HC05
+#	####################################################
+#	ТИПЫ ДАННЫХ:							   (KEYWORD1)
+	iarduino_Bluetooth_HC05	KEYWORD1
+#	####################################################
+#	МЕТОДЫ И ФУНКЦИИ:						   (KEYWORD2)
+	begin	KEYWORD2
+	createSlave	KEYWORD2
+	createMaster	KEYWORD2
+	checkConnect	KEYWORD2
+	available	KEYWORD2
+	find	KEYWORD2
+	send	KEYWORD2
+	read	KEYWORD2
+	end	KEYWORD2
+	runAT	KEYWORD2
+	flgResult	KEYWORD2
+	findName	KEYWORD2
+	findAddr	KEYWORD2
+#	####################################################
+#	КОНСТАНТЫ:								   (LITERAL1)
