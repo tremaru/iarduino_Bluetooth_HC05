@@ -13,7 +13,7 @@
 
 | Модель | Ссылка на магазин |
 |---|---|
-| Bluetooth HC-05 <img src="https://wiki.iarduino.ru/img/resources/794/794.svg" width="100px"></img>| https://iarduino.ru/shop/Expansion-payments/bluetooth-hc-05-trema-modul.html |
+| <p>Bluetooth HC-05</p> <img src="https://wiki.iarduino.ru/img/resources/794/794.svg" width="100px"></img>| https://iarduino.ru/shop/Expansion-payments/bluetooth-hc-05-trema-modul.html |
 
 
 ## Назначение функций:
