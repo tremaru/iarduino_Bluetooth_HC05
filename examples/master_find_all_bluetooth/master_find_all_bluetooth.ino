@@ -2,7 +2,7 @@
 //  Модуль ищет имена и адреса всех bluetooth устройств в радиусе действия
 //  Библиотека написана http://iarduino.ru только для Trema-модулей bluetooth и не будет работать с другими модулями
 
-#include <SoftwareSerial.h>                // Подключаем библиотеку SoftwareSerial для общения с модулем по программной шине UART
+#include <SoftwareSerial.h>                // Подключаем библиотеку SoftwareSerial для общения с модулем по программной шине UART, до подключения библиотеки iarduino_Bluetooth_HC05.
 #include <iarduino_Bluetooth_HC05.h>       // Подключаем библиотеку iarduino_Bluetooth_HC05 для работы с модулем
 SoftwareSerial softSerial(2,3);            // Создаём объект softSerial указывая выводы RX, TX (можно указывать любые выводы Arduino UNO)
                                            // - назначенный вывод RX Arduino (в данном примере вывод 2) подключается к выводу TX модуля
@@ -20,7 +20,8 @@ void setup(){
 
 //  Инициализация модуля hc05.begin(); может занять несколько секунд
 //  В этом примере модуль подключается через программный UART используя библиотеку SoftwareSerial, а при инициализации работы с модулем hc05.begin() указывается объект softSerial
-//  Но модуль можно подключать и к аппаратному UART, тогда при инициализации работы с модулем hc05.begin() нужно указать Serial или (для ArduinoMega) Serial1, Serial2, Serial3.
+//  Но модуль можно подключать и к аппаратному UART, тогда не нужно подключать библиотеку SoftwareSerial и создавать объект softSerial,
+//  а при инициализации работы с модулем hc05.begin() нужно указать Serial или (для ArduinoMega) Serial1, Serial2, Serial3.
 
 void loop (){
 //  Выполняем поиск устройств, не дольше 10 секунд:

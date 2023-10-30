@@ -5,7 +5,7 @@
 
                                            // Вывод RX1 Arduino (вывод 19) подключается к выводу TX модуля
                                            // Вывод TX1 Arduino (вывод 18) подключается к выводу RX модуля
-#include <iarduino_Bluetooth_HC05.h>       // Подключаем библиотеку iarduino_Bluetooth_HC05 для работы с модулем
+#include <iarduino_Bluetooth_HC05.h>       // Подключаем библиотеку iarduino_Bluetooth_HC05 для работы с модулем.
 iarduino_Bluetooth_HC05 hc05(2);           // Создаём объект hc05 указывая любой вывод Arduino. Назначенный вывод подключается к выводу K модуля
 int i;                                     // Объявляем переменную для вывода результатов работы функций
 

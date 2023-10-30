@@ -1,5 +1,4 @@
 #include "iarduino_Bluetooth_HC05.h"
-#include "SoftwareSerial.h"
 
 		iarduino_Bluetooth_HC05::iarduino_Bluetooth_HC05(uint8_t i){pinKey=i;}
 //		ФУНКЦИЯ ВЫПОЛНЕНИЯ AT-КОМАНД:
@@ -21,19 +20,25 @@ char *	iarduino_Bluetooth_HC05::runAT(const char* i, uint32_t j, bool k, bool n,
 //			Устанавливаем «1» или «0» на выводе pinKey (зависит от флага n):
 			digitalWrite(pinKey, !n);
 //			Чистим буфер UART:
-			if(flgType)	{while((*(SoftwareSerial*)objSerial).available()>0){(*(SoftwareSerial*)objSerial).read();}}
-			else		{while((*(HardwareSerial*)objSerial).available()>0){(*(HardwareSerial*)objSerial).read();}}
+			if(flgType)	{while((*(HardwareSerial*)objSerial).available()>0){(*(HardwareSerial*)objSerial).read();}}
+			#ifdef SoftwareSerial_h
+			else		{while((*(SoftwareSerial*)objSerial).available()>0){(*(SoftwareSerial*)objSerial).read();}}
+			#endif
 //			Передаём AT-команду:
-			if(flgType)	{(*(SoftwareSerial*)objSerial).write(i);}
-			else		{(*(HardwareSerial*)objSerial).write(i);}
+			if(flgType)	{(*(HardwareSerial*)objSerial).write(i);}
+			#ifdef SoftwareSerial_h
+			else		{(*(SoftwareSerial*)objSerial).write(i);}
+			#endif
 //			Чистим строку strOut и её длину lenOut:
 			memset(strOut,0,64);
 			lenOut=0;
 //			Читаем ответ модуля в строку strOut:
 			while(millis()<timeOut && lenOut<64){
 //				Читаем очередной символ:
-				if(flgType)	{if((*(SoftwareSerial*)objSerial).available()>0){strOut[lenOut]=(*(SoftwareSerial*)objSerial).read(); lenOut++;}}
-				else		{if((*(HardwareSerial*)objSerial).available()>0){strOut[lenOut]=(*(HardwareSerial*)objSerial).read(); lenOut++;}}
+				if(flgType)	{if((*(HardwareSerial*)objSerial).available()>0){strOut[lenOut]=(*(HardwareSerial*)objSerial).read(); lenOut++;}}
+				#ifdef SoftwareSerial_h
+				else		{if((*(SoftwareSerial*)objSerial).available()>0){strOut[lenOut]=(*(SoftwareSerial*)objSerial).read(); lenOut++;}}
+				#endif
 //				Перехватываем прочитанные данные для их дополнительной обработки:
 				if(t==1){																							//	Если параметр "t" равен 1 значит данные нужно сохранить в массив findName
 					if(lenOut>1){																					//	Если в ответе больше 1 символа
@@ -196,17 +201,29 @@ bool	iarduino_Bluetooth_HC05::funSerialBegin(void){
 					 flgBegin = true;																				//	Устанавливаем флаг успешной инициализации модуля
 					 flgAvailable=false;																			//	Сбрасываем флаг успешного приёма данных
 //			Ожидаем готовность UART выбранного для работы с модулем:
-			if(flgType)	{while(!(*(SoftwareSerial*)objSerial)){;}}
-			else		{while(!(*(HardwareSerial*)objSerial)){;}}
+			if(flgType)	{while(!(*(HardwareSerial*)objSerial)){;}}
+			#ifdef SoftwareSerial_h
+			else		{while(!(*(SoftwareSerial*)objSerial)){;}}
+			#endif
 			delay(1000);
 //			Конфигурируем вывод pinKey:
 			pinMode(pinKey,OUTPUT);
 			digitalWrite(pinKey,LOW);
-//			Выполняем поиск начальной скорости модуля до успеха (i=true) или до достижения скорости в 921600 бит/сек:
+//			Попытка подключиться к модулу по шине UART на скорости 38400 бит/сек:
+			if(flgType)	{(*(HardwareSerial*)objSerial).begin(38400);}
+			#ifdef SoftwareSerial_h
+			else		{(*(SoftwareSerial*)objSerial).begin(38400);}
+			#endif
+//			Проверяем соединение:
+			runATd(F("AT\r\n"));																					//	Отправляем команду модулю - тест.
+			if(flgResult){ i=true; }																				//	Если модуль ответил OK или Error(x), то устанавливаем флаг обнаружения скорости.
+//			Если скорость UART 38400 не подходит, то выполняем её поиск до успеха (i=true) или до достижения скорости в 921600 бит/сек:
 			while(!i && valSpeed<=921600){
 //				Устанавливаем очередную скорость передачи данных по UART:
-				if(flgType)	{(*(SoftwareSerial*)objSerial).begin(valSpeed);}
-				else		{(*(HardwareSerial*)objSerial).begin(valSpeed);}
+				if(flgType)	{(*(HardwareSerial*)objSerial).begin(valSpeed);}
+				#ifdef SoftwareSerial_h
+				else		{(*(SoftwareSerial*)objSerial).begin(valSpeed);}
+				#endif
 //				Проверяем соединение:
 				runATd(F("AT\r\n"));																				//	Отправляем команду модулю - тест
 				if(flgResult){																						//	Если модуль ответил OK или Error(x)
@@ -214,11 +231,13 @@ bool	iarduino_Bluetooth_HC05::funSerialBegin(void){
 					runAT(F("AT+UART=38400,0,0\r\n"));																//	Отправляем команду модулю - перейти на скорость 38400
 //					runAT(F("AT+RESET\r\n"),500,1,1);																//	Отправляем команду модулю - перезагрузиться (таймаут выполнения 500мс, при успехе разрешаем выйти раньше, команда подаётся без «1» на выводе pinKey)
 //					delay(2000);																					//	Ждём выполнение перезагрузки (если этого не сделать, то отправка пользователем любой команды приведёт к установке «1» на выводе pinKey и как следствие переходу модуля в режим AT-команд)
-				}else{valSpeed=valSpeed==38400?57600:valSpeed*=2;}													//	Иначе увеличиваем установленную скорость для осуществления очередной попытки получить ответ от модуля
-			}
+				}else{valSpeed=valSpeed==38400?57600:valSpeed*=2;}													//	Иначе увеличиваем установленную скорость для осуществления очередной попытки получить ответ от модуля.
+			}																										//	1200, *2=2400, *2=4800, *3=9600, *2=19200, *2=38400, далее=57600, *2=115200, *2=230400, *2=460800, *2=921600 (последние скорости не для arduino Uno).
 //			Устанавливаем скорость передачи данных по UART в 38400 бит/сек:
-			if(flgType)	{(*(SoftwareSerial*)objSerial).begin(38400);}
-			else		{(*(HardwareSerial*)objSerial).begin(38400);}
+			if(flgType)	{(*(HardwareSerial*)objSerial).begin(38400);}
+			#ifdef SoftwareSerial_h
+			else		{(*(SoftwareSerial*)objSerial).begin(38400);}
+			#endif
 //			Проверяем была ли найдена начальная скорость модуля:
 			flgBegin=i;																								//	Если флаг i сброшен, значит инициализация провалилась
 //			Проверяем соединение:
@@ -238,7 +257,7 @@ bool	iarduino_Bluetooth_HC05::funSerialBegin(void){
 			return flgBegin;																						//	Выводим флаг успешной инициализации
 }
 
-//			ФУНКЦИЯ РАЗРЫВА СОЕДИНЕНИЯ:
+//		ФУНКЦИЯ РАЗРЫВА СОЕДИНЕНИЯ:
 void	iarduino_Bluetooth_HC05::end(void){
 //			Проверяем наличие и результат инициализации:
 			if(!flgBegin){return;}
@@ -280,12 +299,16 @@ bool	iarduino_Bluetooth_HC05::funSend(const void* i, uint8_t j, uint8_t k){					
 			strOut[k+2]=highByte(c);
 			strOut[k+3]=lowByte(c);
 //			Чистим буфер UART:
-			if(flgType)	{while((*(SoftwareSerial*)objSerial).available()>0){(*(SoftwareSerial*)objSerial).read();}}
-			else		{while((*(HardwareSerial*)objSerial).available()>0){(*(HardwareSerial*)objSerial).read();}}
+			if(flgType)	{while((*(HardwareSerial*)objSerial).available()>0){(*(HardwareSerial*)objSerial).read();}}
+			#ifdef SoftwareSerial_h
+			else		{while((*(SoftwareSerial*)objSerial).available()>0){(*(SoftwareSerial*)objSerial).read();}}
+			#endif
 //			Передаём строку:
 			for(int n=0; n<k+4; n++){
-				if(flgType)	{(*(SoftwareSerial*)objSerial).write(strOut[n]);}
-				else		{(*(HardwareSerial*)objSerial).write(strOut[n]);}
+				if(flgType)	{(*(HardwareSerial*)objSerial).write(strOut[n]);}
+				#ifdef SoftwareSerial_h
+				else		{(*(SoftwareSerial*)objSerial).write(strOut[n]);}
+				#endif
 			}
 //			Запрашиваем подтверждение приёма:
 			runAT("ACK\r\n",1000,1,1);
@@ -327,11 +350,15 @@ bool	iarduino_Bluetooth_HC05::available(void* i,void* j){														//	Арг
 			while(f && lenOut<64){
 //				Читаем данные побайтно в строку strOut, сохраняя количество прочтённых байт в переменную lenOut:
 						f=0;
-						if(flgType)	{if((*(SoftwareSerial*)objSerial).available()>0){f=1; strOut[lenOut]=(*(SoftwareSerial*)objSerial).read(); lenOut++;}}
-						else		{if((*(HardwareSerial*)objSerial).available()>0){f=1; strOut[lenOut]=(*(HardwareSerial*)objSerial).read(); lenOut++;}}
+						if(flgType)	{if((*(HardwareSerial*)objSerial).available()>0){f=1; strOut[lenOut]=(*(HardwareSerial*)objSerial).read(); lenOut++;}}
+						#ifdef SoftwareSerial_h
+						else		{if((*(SoftwareSerial*)objSerial).available()>0){f=1; strOut[lenOut]=(*(SoftwareSerial*)objSerial).read(); lenOut++;}}
+						#endif
 				if(!f){ delay(20);																					//	Если данные закончились, не радуемся))), ждём 20 мс и проверяем еще раз
-						if(flgType)	{if((*(SoftwareSerial*)objSerial).available()>0){f=1; strOut[lenOut]=(*(SoftwareSerial*)objSerial).read(); lenOut++;}}
-						else		{if((*(HardwareSerial*)objSerial).available()>0){f=1; strOut[lenOut]=(*(HardwareSerial*)objSerial).read(); lenOut++;}}
+						if(flgType)	{if((*(HardwareSerial*)objSerial).available()>0){f=1; strOut[lenOut]=(*(HardwareSerial*)objSerial).read(); lenOut++;}}
+						#ifdef SoftwareSerial_h
+						else		{if((*(SoftwareSerial*)objSerial).available()>0){f=1; strOut[lenOut]=(*(SoftwareSerial*)objSerial).read(); lenOut++;}}
+						#endif
 				}
 			}																										//	Строка strOut должна состоять из следующих полученных байтов: [1 байт: кол-во элементов массива][1 байт: кол-во байт массива][n байт: байты массива][2 байта: CRC][5 байт: запрос подтверждения "ACK\r\n"]
 //			Проверяем размер полученных данных
@@ -346,8 +373,10 @@ bool	iarduino_Bluetooth_HC05::available(void* i,void* j){														//	Арг
 			*(int*)i=int(strOut[0]);
 			*(int*)j=int(strOut[1]);
 //			Передаём ответ передатчику об успешном приёме данных:
-			if(flgType)	{(*(SoftwareSerial*)objSerial).write("OK\r\n");}
-			else		{(*(HardwareSerial*)objSerial).write("OK\r\n");}
+			if(flgType)	{(*(HardwareSerial*)objSerial).write("OK\r\n");}
+			#ifdef SoftwareSerial_h
+			else		{(*(SoftwareSerial*)objSerial).write("OK\r\n");}
+			#endif
 //			Устанавливаем флаг успешного приёма данных и возвращаем true
 			flgAvailable=true;
 			return true;
