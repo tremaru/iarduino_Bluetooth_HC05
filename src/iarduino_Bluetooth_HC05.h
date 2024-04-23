@@ -1,5 +1,5 @@
 //	Библиотека для работы с Bluetooth Trema-модулем HC05: http://iarduino.ru/shop/Expansion-payments/bluetooth-hc-05-trema-modul.html
-//  Версия: 1.1.0
+//  Версия: 1.1.1
 //  Последнюю версию библиотеки Вы можете скачать по ссылке: http://iarduino.ru/file/301.html
 //  Подробное описание функции бибилиотеки доступно по ссылке: http://wiki.iarduino.ru/page/trema-modul-bluetooth-hc-05/
 //  Библиотека является собственностью интернет магазина iarduino.ru и может свободно использоваться и распространяться!
@@ -11,8 +11,12 @@
 #ifndef iarduino_Bluetooth_HC05_h																					//
 #define iarduino_Bluetooth_HC05_h																					//
 																													//
-#ifdef    SoftwareSerial_h																							//	Если в скетче подключена библиотека  SoftwareSerial,
-#include "SoftwareSerial.h"																							//	то разрешаем работать  с библиотекой SoftwareSerial.
+#if defined(__SOFTWARE_SERIAL_H__) || defined(SoftwareSerial_h)														//	Если в скетче подключена библиотека  SoftwareSerial,
+	#include <SoftwareSerial.h>																						//	то разрешаем работать  с библиотекой SoftwareSerial.
+	#define incSWSerial																								//	Флаг разрешающий определить функцию begin(SoftwareSerial&)
+	#define SOFTwareSerial SoftwareSerial																			//	Имя класса SoftwareSerial
+#else																												//	Если библиотека не подключена, то ...
+	#define SOFTwareSerial HardwareSerial																			//	Нельзя использовать имя класса SoftwareSerial, используем HardwareSerial.
 #endif																												//
 																													//
 #if defined(ARDUINO) && (ARDUINO >= 100)																			//
@@ -25,7 +29,7 @@ class iarduino_Bluetooth_HC05{																						//
 																													//
 	public:			iarduino_Bluetooth_HC05	(uint8_t);																//	Объявляем конструктор класса						(аргумент функции: № вывода к которому подключён вход K модуля)
 		bool		begin					(HardwareSerial &j){flgType=1; objSerial=&j; return funSerialBegin();}	//	Определяем функцию инициализации модуля				(аргумент функции: объект для работы с аппаратным UART)
-		#ifdef SoftwareSerial_h																						//
+		#ifdef incSWSerial																							//
 		bool		begin					(SoftwareSerial &j){flgType=0; objSerial=&j; return funSerialBegin();}	//	Определяем функцию инициализации модуля				(аргумент функции: объект для работы с программным UART)
 		#endif																										//
 		char *		runAT					(const char*, uint32_t=500, bool=true, bool=false, bool=false);			//	Объявляем функцию для выполнения AT-команд			(аргумент функции: строка с АТ-командой, таймаут в миллисекундах, флаг разрешающий досрочный выход при успешном ответе модуля, флаг отправки команды без «1» на выводе pinKey, флаг дополнительной обработки ответа команд INQ или RNAME)
@@ -64,13 +68,66 @@ class iarduino_Bluetooth_HC05{																						//
 		bool		flgBegin=false;																					//	Определяем флаг успешной инициализации				(1-OK, 0-Error)
 		bool		flgMaster=false;																				//	Определяем флаг роли мастера						(1-Master, 0-Slave)
 		bool		flgAvailable=false;																				//	Определяем флаг успешного приёма данных				(1-OK, 0-Error)
-		bool		funSerialBegin			(void);																	//	Объявляем функцию инициализации модуля				(без аргументов)
 		void		funSetLED				(void);																	//	Объявляем функцию управления светодиодами			(без аргументов)
 		uint8_t		funFindArrName			(const char*);															//	Объявляем функцию поиска имени  в массиве findName	(аргумент функции: искомое имя)
 		bool		funSend					(const void*, uint8_t, uint8_t);										//	Объявляем функцию передачи данных					(аргумент функции: указатель на массив или переменную, количество элементов в массиве или 0 для переменных, размер массива или переменной)
 		bool		funRead					(void*, uint8_t);														//	Объявляем функцию получения данных					(аргумент функции: указатель на массив или переменную, размер массива или переменной на который указывает указатель)
 		uint16_t	funcCRC16				(uint8_t);																//	Объявляем функцию получения CRC из строки strOut	(аргумент функции: количество учитываемых симолов строки)
-		
-};
-
+		bool		funSerialBegin			(void){																	//	Определяем функцию инициализации модуля				(без аргументов)
+												uint32_t valSpeed = 1200;											//	Подбираемая скорость работы модуля
+												bool     i=false;													//	Флаг обнаружения начальной скорости модуля
+												flgBegin = true;													//	Устанавливаем флаг успешной инициализации модуля
+												flgAvailable=false;													//	Сбрасываем флаг успешного приёма данных
+											//	Ожидаем готовность UART выбранного для работы с модулем:			//
+												if(flgType)	{while(!(*(HardwareSerial*)objSerial)){;}}				//
+												#ifndef RENESAS_CORTEX_M4											//	Библиотека SoftwareSerial для плат Arduino UNO R4 не поддерживает operator!(bool). По состоянию на март 2024г.
+												else		{while(!(*(SOFTwareSerial*)objSerial)){;}}				//
+												#endif																//
+												delay(1000);														//
+											//	Конфигурируем вывод pinKey:											//
+												pinMode(pinKey,OUTPUT);												//
+												digitalWrite(pinKey,LOW);											//
+											//	Попытка подключиться к модулу на скорости 38400 бит/сек:			//
+												if(flgType)	{(*(HardwareSerial*)objSerial).begin(38400);}			//
+												else		{(*(SOFTwareSerial*)objSerial).begin(38400);}			//	Не работает из файла *.cpp
+											//	Проверяем соединение:												//
+												runATd(F("AT\r\n"));												//	Отправляем команду модулю - тест.
+												if(flgResult){ i=true; }											//	Если модуль ответил OK или Error(x), то устанавливаем флаг обнаружения скорости.
+											//	Если скорость UART 38400 не подходит, то выполняем поиск частоты:	//
+												while(!i && valSpeed<=921600){										//	Выполняем поиск частоты до успеха (i=true) или до достижения скорости в 921600 бит/сек:
+												//	Устанавливаем очередную скорость передачи данных по UART:		//
+													if(flgType)	{(*(HardwareSerial*)objSerial).begin(valSpeed);}	//
+													else		{(*(SOFTwareSerial*)objSerial).begin(valSpeed);}	//	Не работает из файла *.cpp
+												//	Проверяем соединение:											//
+													runATd(F("AT\r\n"));											//	Отправляем команду модулю - тест
+													if(flgResult){													//	Если модуль ответил OK или Error(x)
+														i=true;														//	Устанавливаем флаг обнаружения скорости
+														runAT(F("AT+UART=38400,0,0\r\n"));							//	Отправляем команду модулю - перейти на скорость 38400
+													//	runAT(F("AT+RESET\r\n"),500,1,1);							//	Отправляем команду модулю - перезагрузиться (таймаут выполнения 500мс, при успехе разрешаем выйти раньше, команда подаётся без «1» на выводе pinKey)
+													//	delay(2000);												//	Ждём выполнение перезагрузки (если этого не сделать, то отправка пользователем любой команды приведёт к установке «1» на выводе pinKey и как следствие переходу модуля в режим AT-команд)
+													}else{valSpeed=valSpeed==38400?57600:valSpeed*=2;}				//	Иначе увеличиваем установленную скорость для осуществления очередной попытки получить ответ от модуля.
+												}																	//	1200, *2=2400, *2=4800, *3=9600, *2=19200, *2=38400, далее=57600, *2=115200, *2=230400, *2=460800, *2=921600 (последние скорости не для arduino Uno).
+											//	Устанавливаем скорость передачи данных по UART в 38400 бит/сек:		//
+												if(flgType)	{(*(HardwareSerial*)objSerial).begin(38400);}			//
+												else		{(*(SOFTwareSerial*)objSerial).begin(38400);}			//	Не работает из файла *.cpp
+											//	Проверяем была ли найдена начальная скорость модуля:				//
+												flgBegin=i;															//	Если флаг i сброшен, значит инициализация провалилась
+											//	Проверяем соединение:												//
+												runATd(F("AT\r\n")); if(flgResult < 1){flgBegin=0;}					//	Отправляем команду модулю - тест. Если команда не выполнена, значит инициализация провалилась
+											//	Проверяем уровни на пинах PIO 4-7:									//	Отправляем команду несколько раз, т.к. этот чинамодуль частенько отвечает "OK\r\n" без возврата реального состояния на пинах
+																			runATd(F("AT+MPIO?\r\n")); 				//	Отправляем команду модулю - вернуть состояние на выводах PIO.
+												if(lenOut<5){delay(100);	runATd(F("AT+MPIO?\r\n"));} 			//	Отправляем команду модулю - вернуть состояние на выводах PIO.
+												if(lenOut<5){delay(100);	runATd(F("AT+MPIO?\r\n"));} 			//	Отправляем команду модулю - вернуть состояние на выводах PIO.
+												if(lenOut<5){delay(100);	runATd(F("AT+MPIO?\r\n"));} 			//	Отправляем команду модулю - вернуть состояние на выводах PIO.
+												if(strncasecmp(&strOut[7], "5", 1)){flgBegin=0;}					//	Если значение на выводах PIO 7-4 не равно b0101, значит инициализация провалилась
+											//	Читаем роль модуля:													//
+												char j = runATd(F("AT+ROLE?\r\n"))[6];								//	j == '0'-slave; '1'-master; '2'-slave loop
+												flgMaster=false; if(j=='1'){flgMaster=true;}						//	flgMaster == 0-slave; 1-master;
+											//	Устанавливаем уровни для светодиодов:								//
+												funSetLED(); delay(100); funSetLED();								//	Функция включает светодиоды в соответствии со значением флага flgMaster.
+											//	Возвращаем результат инициализации:									//
+												return flgBegin;													//	Выводим флаг успешной инициализации
+											}																		//
+};																													//
+																													//
 #endif
