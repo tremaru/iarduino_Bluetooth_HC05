@@ -1,5 +1,5 @@
 //	Библиотека для работы с Bluetooth Trema-модулем HC05: http://iarduino.ru/shop/Expansion-payments/bluetooth-hc-05-trema-modul.html
-//  Версия: 1.1.2
+//  Версия: 1.1.3
 //  Последнюю версию библиотеки Вы можете скачать по ссылке: http://iarduino.ru/file/301.html
 //  Подробное описание функции бибилиотеки доступно по ссылке: http://wiki.iarduino.ru/page/trema-modul-bluetooth-hc-05/
 //  Библиотека является собственностью интернет магазина iarduino.ru и может свободно использоваться и распространяться!
