@@ -1,5 +1,5 @@
 //	Библиотека для работы с Bluetooth Trema-модулем HC05: http://iarduino.ru/shop/Expansion-payments/bluetooth-hc-05-trema-modul.html
-//  Версия: 1.1.3
+//  Версия: 1.1.4
 //  Последнюю версию библиотеки Вы можете скачать по ссылке: http://iarduino.ru/file/301.html
 //  Подробное описание функции бибилиотеки доступно по ссылке: http://wiki.iarduino.ru/page/trema-modul-bluetooth-hc-05/
 //  Библиотека является собственностью интернет магазина iarduino.ru и может свободно использоваться и распространяться!
@@ -79,9 +79,11 @@ class iarduino_Bluetooth_HC05{																						//
 												flgBegin = true;													//	Устанавливаем флаг успешной инициализации модуля
 												flgAvailable=false;													//	Сбрасываем флаг успешного приёма данных
 											//	Ожидаем готовность UART выбранного для работы с модулем:			//
-												if(flgType)	{while(!(*(HardwareSerial*)objSerial)){;}}				//
-												#ifndef RENESAS_CORTEX_M4											//	Библиотека SoftwareSerial для плат Arduino UNO R4 не поддерживает operator!(bool). По состоянию на март 2024г.
-												else		{while(!(*(SOFTwareSerial*)objSerial)){;}}				//
+												#ifndef ARDUINO_ARCH_RP2040											//	Для плат Paspberry Pi Pico поддерживается (bool)Serial, но не поддерживается (bool)Serial1. Возможно после 2024 года этот баг уберут.
+														if(flgType)	{while(!(*(HardwareSerial*)objSerial)){;}}		//
+													#ifndef RENESAS_CORTEX_M4										//	Библиотека SoftwareSerial для плат Arduino UNO R4 не поддерживает operator!(bool). По состоянию на март 2024г.
+														else		{while(!(*(SOFTwareSerial*)objSerial)){;}}		//
+													#endif															//
 												#endif																//
 												delay(1000);														//
 											//	Конфигурируем вывод pinKey:											//
